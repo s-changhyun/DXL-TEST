@@ -1,0 +1,4 @@
+dxl_1 :              # XH-430
+   return_delay_time     : 1    
+   operating_mode        : 0     
+   goal_current          : 0
