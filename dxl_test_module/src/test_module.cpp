@@ -63,30 +63,8 @@ TestModule::TestModule()
   goal_joint_acceleration_  = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
 
   goal_joint_effort_        = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-  joint_position_integral_  = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
 
-  /* torque offset (friction dynamic */
-//  torque_offset_      = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-//  torque_offset_sign_ = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-//  torque_offset_sign_.fill(0.0);
-
-  /* joint gain */
-//  ff_torque_gain_    = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-//  fb_p_torque_gain_  = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-
-//  ff_joint_vel_gain_    = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-//  fb_p_joint_pos_gain_  = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-//  fb_i_joint_pos_gain_  = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-//  fb_d_joint_pos_gain_  = Eigen::VectorXd::Zero(MAX_DXL_NUM + 1);
-
-  /* target joint values */
-//  via_num_ = 1;
-//  via_time_ = Eigen::MatrixXd::Zero(via_num_, 1);
-
-//  target_joint_position_          = Eigen::VectorXd::Zero(MAX_JOINT_ID + 1);
-//  target_joint_via_position_      = Eigen::MatrixXd::Zero(via_num_,MAX_JOINT_ID + 1);
-//  target_joint_via_velocity_      = Eigen::MatrixXd::Zero(via_num_, MAX_JOINT_ID + 1);
-//  target_joint_via_acceleration_  = Eigen::MatrixXd::Zero(via_num_, MAX_JOINT_ID + 1);
+  goal_torque_ = 0.0;
 }
 
 TestModule::~TestModule()
@@ -101,6 +79,42 @@ void TestModule::initialize(const int control_cycle_msec, robotis_framework::Rob
   queue_thread_ = boost::thread(boost::bind(&TestModule::queueThread, this));
 }
 
+void TestModule::setGoalTorqueMsgCallback(const std_msgs::Float64::ConstPtr& msg)
+{
+  goal_torque_ = msg->data;
+
+  is_moving_ = true;
+}
+
+void TestModule::outputSave()
+{
+  std::ofstream goal_torque_fout;
+  goal_torque_fout.open("/home/thor/catkin_ws/src/dxl_test/dxl_test_module/data/goal_torque.txt");
+  for(std::vector<double>::const_iterator i = goal_torque_vector_.begin(); i != goal_torque_vector_.end(); ++i)
+    goal_torque_fout << *i << '\n';
+
+  if(goal_torque_fout.is_open()==true)
+    goal_torque_fout.close();
+
+  std::ofstream present_torque_fout;
+  present_torque_fout.open("/home/thor/catkin_ws/src/dxl_test/dxl_test_module/data/present_torque.txt");
+  for(std::vector<double>::const_iterator i = present_torque_vector_.begin(); i != present_torque_vector_.end(); ++i)
+    present_torque_fout << *i << '\n';
+
+  if(present_torque_fout.is_open()==true)
+    present_torque_fout.close();
+
+  std::ofstream present_velocity;
+  present_velocity.open("/home/thor/catkin_ws/src/dxl_test/dxl_test_module/data/present_velocity.txt");
+  for(std::vector<double>::const_iterator i = present_velocity_vector_.begin(); i != present_velocity_vector_.end(); ++i)
+    present_velocity << *i << '\n';
+
+  if(present_velocity.is_open()==true)
+    present_velocity.close();
+
+  ROS_INFO("[END] Save");
+}
+
 void TestModule::queueThread()
 {
   ros::NodeHandle    ros_node;
@@ -113,66 +127,13 @@ void TestModule::queueThread()
   set_ctrl_module_pub_ = ros_node.advertise<std_msgs::String>("/robotis/enable_ctrl_module", 1);
 
   /* subscribe topics */
+  ros::Subscriber set_goal_torque_msg_sub = ros_node.subscribe("/robotis/test/goal_torque_msg", 5,
+                                                               &TestModule::setGoalTorqueMsgCallback, this);
 
   ros::WallDuration duration(control_cycle_sec_);
   while(ros_node.ok())
     callback_queue.callAvailable(duration);
 }
-
-//void TestModule::setStartTrajectory()
-//{
-//  ROS_INFO("[start] send trajectory");
-//  publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "Start Trajectory");
-//}
-
-//void TestModule::setEndTrajectory()
-//{
-//  if (is_moving_ == true)
-//  {
-//    if (cnt_ >= all_time_steps_)
-//    {
-//      ROS_INFO("[end] send trajectory");
-//      publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "End Trajectory");
-
-//      is_moving_ = false;
-//      wb_ik_solving_ = false;
-
-//      wb_pelvis_planning_ = false;
-//      wb_l_arm_planning_ = false;
-//      wb_r_arm_planning_ = false;
-//      cnt_ = 0;
-
-//      if (display_joint_angle_ == true)
-//      {
-//        for (int id=1; id<=12; id++)
-//          ROS_INFO("%s : %f",
-//                   robotis_->link_data_[id]->name_.c_str(),
-//                   robotis_->link_data_[id]->joint_angle_ * RADIAN2DEGREE);
-//      }
-
-//      ROS_INFO("-----");
-
-//      for (int id=1; id<=MAX_JOINT_ID; id++)
-//        ROS_INFO("torque[%d] : %f", id, goal_joint_effort_(id));
-
-//      PRINT_MAT(robotis_->link_data_[ID_PELVIS_ROLL]->joint_torque_);
-//      PRINT_MAT(robotis_->link_data_[ID_PELVIS_PITCH]->joint_torque_);
-//      PRINT_MAT(robotis_->link_data_[ID_PELVIS_YAW]->joint_torque_);
-
-//      PRINT_MAT(robotis_->link_data_[ID_L_LEG_END]->position_);
-//      PRINT_MAT(robotis_->link_data_[ID_R_LEG_END]->position_);
-
-//      Eigen::Vector3d mass_center = robotis_->calcMassCenter(0);
-//      center_of_mass_ = robotis_->calcCenterOfMass(mass_center);
-//      PRINT_MAT(center_of_mass_);
-
-//      ROS_INFO("-----");
-
-//      torque_offset_sign_.fill(0.0);
-
-//    }
-//  }
-//}
 
 void TestModule::process(std::map<std::string, robotis_framework::Dynamixel *> dxls,
                            std::map<std::string, double> sensors)
@@ -205,29 +166,16 @@ void TestModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
     present_joint_effort_(joint_name_to_id_[joint_name]) = dxl->dxl_state_->present_torque_;
   }
 
-
-//  if (is_moving_ == true)
-//  {
-//    if (cnt_ == 0)
-//    {
-//      setStartTrajectory();
-//    }
-
-//    for (int id=1; id<=MAX_JOINT_ID; id++)
-//    {
-//      goal_joint_position_(id)      = goal_joint_position_tra_(cnt_, id);
-//      goal_joint_velocity_(id)      = goal_joint_velocity_tra_(cnt_, id);
-//      goal_joint_acceleration_(id)  = goal_joint_acceleration_tra_(cnt_, id);
-//    }
-//    cnt_++;
-//  }
-
-//  setEndTrajectory();
-
   // Joint Controller
   for (int id=1; id<=MAX_DXL_NUM; id++)
-    goal_joint_effort_(id) = 0.0;
+    goal_joint_effort_(id) = goal_torque_;
 
+
+//  ROS_INFO("curr. vel. : %f", present_joint_velocity_(joint_name_to_id_["dxl_1"]));
+//  ROS_INFO("curr. eff. : %f", present_joint_effort_(joint_name_to_id_["dxl_1"]));
+//  ROS_INFO("tar.  eff. : %f", goal_joint_effort_(joint_name_to_id_["dxl_1"]));
+
+//  PRINT_MAT(goal_joint_effort_);
 
   /*----- Set Goal Joint State -----*/
   for (std::map<std::string, robotis_framework::DynamixelState *>::iterator state_iter = result_.begin();
@@ -241,10 +189,29 @@ void TestModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
   time_duration = ros::Time::now() - begin;
   double loop_time = time_duration.toSec(); //time_duration.sec + time_duration.nsec * 1e-9;
 
+  if (is_moving_ == true)
+  {
+    if (cnt_== 0)
+      ROS_INFO("[START] Save");
+
+    present_torque_vector_.push_back(present_joint_effort_(joint_name_to_id_["dxl_1"]));
+    goal_torque_vector_.push_back(goal_joint_effort_(joint_name_to_id_["dxl_1"]));
+
+    present_velocity_vector_.push_back(present_joint_velocity_(joint_name_to_id_["dxl_1"]));
+
+    cnt_++;
+  }
+
+  if (cnt_ == 3000)
+  {
+    outputSave();
+    is_moving_ = false;
+    cnt_ = 0;
+  }
+
   if (loop_time > 0.004)
     ROS_WARN("Calculation Time : %f", loop_time );
 }
-
 
 void TestModule::stop()
 {

@@ -40,6 +40,10 @@
 
 #include <map>
 #include <fstream>
+#include <vector>
+#include <string>
+#include <iterator>
+
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <ros/package.h>
@@ -73,19 +77,9 @@ private:
   double control_cycle_sec_;
   boost::thread queue_thread_;
 
-//  std::string gain_path_;
-//  std::string torque_offset_path_;
-//  std::string friction_path_;
-
   /* sample subscriber & publisher */
   ros::Publisher status_msg_pub_;
   ros::Publisher set_ctrl_module_pub_;
-//  ros::Publisher goal_joint_state_pub_;
-//  ros::Publisher friction_pub_;
-
-//  ros::ServiceServer load_joint_controller_gain_server_;
-//  ros::ServiceServer get_wholebody_kinematics_pose_server_;
-//  ros::ServiceServer load_friction_gain_server_;
 
   boost::thread* tra_gene_tread_;
 
@@ -100,26 +94,9 @@ private:
   Eigen::VectorXd goal_joint_velocity_;
   Eigen::VectorXd goal_joint_acceleration_;
 
-//  Eigen::VectorXd torque_offset_;
-//  Eigen::VectorXd torque_offset_sign_;
-
-  /* friction gain */
-//  Eigen::VectorXd friction_static_gain_;
-//  Eigen::VectorXd friction_dynamic_gain_;
-//  Eigen::VectorXd friction_viscous_gain_;
-
   Eigen::VectorXd goal_joint_effort_;
 
-  Eigen::VectorXd joint_position_integral_;
-
-  /* joint gain */
-//  Eigen::VectorXd ff_torque_gain_;
-//  Eigen::VectorXd fb_p_torque_gain_;
-
-//  Eigen::VectorXd ff_joint_vel_gain_;
-//  Eigen::VectorXd fb_p_joint_pos_gain_;
-//  Eigen::VectorXd fb_i_joint_pos_gain_;
-//  Eigen::VectorXd fb_d_joint_pos_gain_;
+  double goal_torque_;
 
   /* movement */
   bool is_moving_;
@@ -127,132 +104,16 @@ private:
   int all_time_steps_;
   int cnt_;
 
-  /* msgs */
-//  robotis_op2_motion_module_msgs::WholebodyJointPose wholebody_goal_joint_msg_;
-//  robotis_op2_motion_module_msgs::WholebodyKinematicsPose wholebody_goal_kinematics_msg_;
+  std::vector<double> present_torque_vector_;
+  std::vector<double> goal_torque_vector_;
+  std::vector<double> present_velocity_vector_;
 
-//  robotis_op2_motion_module_msgs::JointControllerGain joint_controller_gain_msg_;
-//  robotis_op2_motion_module_msgs::FrictionGain friction_gain_msg_;
-
-  /* target joint values */
-  Eigen::VectorXd target_joint_position_;
-
-//  int via_num_;
-//  Eigen::MatrixXd via_time_;
-//  Eigen::MatrixXd target_joint_via_position_;
-//  Eigen::MatrixXd target_joint_via_velocity_;
-//  Eigen::MatrixXd target_joint_via_acceleration_;
-
-  /* goal trajectory */
-  Eigen::MatrixXd goal_joint_position_tra_;
-  Eigen::MatrixXd goal_joint_velocity_tra_;
-  Eigen::MatrixXd goal_joint_acceleration_tra_;
-
-//  Eigen::MatrixXd goal_task_tra_;
-//  Eigen::MatrixXd goal_pelvis_tra_;
-//  Eigen::MatrixXd goal_l_foot_tra_;
-//  Eigen::MatrixXd goal_r_foot_tra_;
-//  Eigen::MatrixXd goal_l_arm_tra_;
-//  Eigen::MatrixXd goal_r_arm_tra_;
-
-  /* wholebody inverse kinematics */
-//  bool wb_ik_solving_;
-//  bool wb_pelvis_planning_;
-//  bool wb_l_arm_planning_;
-//  bool wb_r_arm_planning_;
-
-//  Eigen::MatrixXd ik_weight_;
-//  Eigen::MatrixXd ik_target_position_, ik_target_rotation_;
-//  Eigen::Quaterniond ik_start_quaternion_, ik_goal_quaternion_;
-
-//  Eigen::MatrixXd wb_pelvis_target_position_, wb_pelvis_target_rotation_;
-//  Eigen::Quaterniond wb_pelvis_start_quaternion_, wb_pelvis_goal_quaternion_;
-
-//  Eigen::MatrixXd wb_l_arm_target_position_, wb_l_arm_target_rotation_;
-//  Eigen::Quaterniond wb_l_arm_start_quaternion_, wb_l_arm_goal_quaternion_;
-//  Eigen::MatrixXd wb_r_arm_target_position_, wb_r_arm_target_rotation_;
-//  Eigen::Quaterniond wb_r_arm_start_quaternion_, wb_r_arm_goal_quaternion_;
-
-//  Eigen::MatrixXd wb_l_foot_target_position_, wb_l_foot_target_rotation_;
-//  Eigen::Quaterniond wb_l_foot_start_quaternion_, wb_l_foot_goal_quaternion_;
-//  Eigen::MatrixXd wb_r_foot_target_position_, wb_r_foot_target_rotation_;
-//  Eigen::Quaterniond wb_r_foot_start_quaternion_, wb_r_foot_goal_quaternion_;
-
-//  Eigen::MatrixXd wb_l_foot_default_position_, wb_r_foot_default_position_;
-//  Eigen::Quaterniond wb_l_foot_default_quaternion_, wb_r_foot_default_quaternion_;
-
-  /* etc */
-//  bool display_joint_angle_;
-//  bool solve_floating_base_;
-
-  /* center of mass */
-//  double total_mass_;
-//  Eigen::Vector3d center_of_mass_;
-
-  // kinematics dynamics parameters
-//  robotis_op2::KinematicsDynamics *robotis_;
-
-//  bool walking_ctrl_mode_;
-//  bool joint_ctrl_mode_;
-
-//  std::map<std::string, JointPose>::iterator op2_walking_joint_it_[12];
-//  Eigen::Matrix4d mat_pelvis_to_chest_;
-//  robotis_framework::Pose3D pose3d_g_to_chest_;
-  boost::mutex    process_mutex_;
-
+  boost::mutex process_mutex_;
   void queueThread();
 
-//  void parseInverseKinematicsWeightData(const std::string &path);
-//  void parseJointControllerGain(const std::string &path);
+  void setGoalTorqueMsgCallback(const std_msgs::Float64::ConstPtr& msg);
 
-//  void gazeboInitializationCallback(const std_msgs::String::ConstPtr& msg);
-
-//  void saveJointControllerGainCallback(const std_msgs::String::ConstPtr& msg);
-//  void setJointControllerGainCallback(const robotis_op2_motion_module_msgs::JointControllerGain::ConstPtr& msg);
-//  void setExternalForceCallback(const geometry_msgs::WrenchStamped::ConstPtr& msg);
-////  void setJointValueCallback(const sensor_msgs::JointState::ConstPtr& msg);
-
-//  bool loadJointControllerGainCallback(robotis_op2_motion_module_msgs::GetJointControllerGain::Request &req,
-//                                       robotis_op2_motion_module_msgs::GetJointControllerGain::Response &res);
-//  bool loadFrictionGainCallback(robotis_op2_motion_module_msgs::GetFrictionGain::Request &req,
-//                                robotis_op2_motion_module_msgs::GetFrictionGain::Response &res);
-
-//  bool getWholebodyKinematicsPoseCallback(robotis_op2_motion_module_msgs::GetWholebodyKinematicsPose::Request &req,
-//                                          robotis_op2_motion_module_msgs::GetWholebodyKinematicsPose::Response &res);
-
-//  void setWholebodyPelvisPoseResetMsgCallback(const std_msgs::String::ConstPtr& msg);
-//  void setWholebodyJointPoseMsgCallback(const robotis_op2_motion_module_msgs::WholebodyJointPose::ConstPtr& msg);
-//  void setWholebodyKinematicsPoseMsgCallback(const robotis_op2_motion_module_msgs::WholebodyKinematicsPose::ConstPtr& msg);
-
-//  void setFloatingBaseMsgCallback(const std_msgs::Bool::ConstPtr& msg);
-//  void setCtrlModeMsgCallback(const std_msgs::String::ConstPtr& msg);
-
-//  void applyJointTorqueOffsetCallback(const sensor_msgs::JointState::ConstPtr& msg);
-//  void setJointTorqueOffsetCallback(const std_msgs::String::ConstPtr& msg);
-
-//  void saveFrictionGainCallback(const std_msgs::String::ConstPtr& msg);
-//  void setFrictionGainCallback(const robotis_op2_motion_module_msgs::FrictionGain::ConstPtr& msg);
-
-//  void planWholebodyJointPose();
-//  void planWholebodyKinematicsPose();
-//  void planDefaultLegTrajectory();
-
-//  void setPelvisPose(int cnt);
-//  void setLeftFootPose(int cnt);
-//  void setRightFootPose(int cnt);
-//  void setLeftArmPose(int cnt);
-//  void setRightArmPose(int cnt);
-
-//  void setStartTrajectory();
-//  void setEndTrajectory();
-
-//  void solveWholebodyInverseKinematics();
-
-//  void updateJointControllerGain();
-//  Eigen::VectorXd calcJointController();
-
-//  void updateFrictionGain();
-//  Eigen::VectorXd calcFriction();
+  void outputSave();
 
 public:
   TestModule();
