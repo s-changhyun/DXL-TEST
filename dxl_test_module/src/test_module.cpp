@@ -202,7 +202,7 @@ void TestModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
     cnt_++;
   }
 
-  if (cnt_ == 3000)
+  if (cnt_ == 30000)
   {
     outputSave();
     is_moving_ = false;
