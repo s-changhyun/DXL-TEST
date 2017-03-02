@@ -81,6 +81,8 @@ private:
   ros::Publisher status_msg_pub_;
   ros::Publisher set_ctrl_module_pub_;
 
+  ros::Publisher goal_state_pub_;
+
   boost::thread* tra_gene_tread_;
 
   std::map<std::string, int> joint_name_to_id_;

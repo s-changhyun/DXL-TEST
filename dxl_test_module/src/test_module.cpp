@@ -126,6 +126,8 @@ void TestModule::queueThread()
   status_msg_pub_ = ros_node.advertise<robotis_controller_msgs::StatusMsg>("/robotis/status", 1);
   set_ctrl_module_pub_ = ros_node.advertise<std_msgs::String>("/robotis/enable_ctrl_module", 1);
 
+  goal_state_pub_ = ros_node.advertise<sensor_msgs::JointState>("/robotis/test/goal_state", 1);
+
   /* subscribe topics */
   ros::Subscriber set_goal_torque_msg_sub = ros_node.subscribe("/robotis/test/goal_torque_msg", 5,
                                                                &TestModule::setGoalTorqueMsgCallback, this);
@@ -168,8 +170,16 @@ void TestModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
 
   // Joint Controller
   for (int id=1; id<=MAX_DXL_NUM; id++)
-    goal_joint_effort_(id) = goal_torque_;
+    goal_joint_effort_(id) = goal_torque_ + 0.75 * (goal_torque_ - present_joint_effort_(id));
 
+  sensor_msgs::JointState goal_state_msg;
+  goal_state_msg.header.stamp = ros::Time::now();
+  goal_state_msg.effort.push_back(goal_torque_);
+
+//  std_msgs::Float64 goal_state_msg;
+//  goal_state_msg.
+//  goal_state_msg.data = goal_torque_;
+  goal_state_pub_.publish(goal_state_msg);
 
 //  ROS_INFO("curr. vel. : %f", present_joint_velocity_(joint_name_to_id_["dxl_1"]));
 //  ROS_INFO("curr. eff. : %f", present_joint_effort_(joint_name_to_id_["dxl_1"]));
@@ -202,7 +212,7 @@ void TestModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
     cnt_++;
   }
 
-  if (cnt_ == 30000)
+  if (cnt_ == 10000)
   {
     outputSave();
     is_moving_ = false;
