@@ -170,7 +170,7 @@ void TestModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
 
   // Joint Controller
   for (int id=1; id<=MAX_DXL_NUM; id++)
-    goal_joint_effort_(id) = goal_torque_ + 0.75 * (goal_torque_ - present_joint_effort_(id));
+    goal_joint_effort_(id) = goal_torque_ ; //+ 0.75 * (goal_torque_ - present_joint_effort_(id));
 
   sensor_msgs::JointState goal_state_msg;
   goal_state_msg.header.stamp = ros::Time::now();
